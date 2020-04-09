@@ -71,13 +71,13 @@ object EtlPipeline {
       events <- EitherT(
         adapterRegistry
           .toRawEvents(payload, client, processor)
-          .map(_.toEither.leftMap(badRow => NonEmptyList.one(badRow)))
+          .map(_.toEitherNel)
       )
       enrichedEvents <- events.map { e =>
         EitherT(
           EnrichmentManager
             .enrichEvent(enrichmentRegistry, client, processor, etlTstamp, e)
-            .map(_.toValidatedNel.toEither)
+            .map(_.toEitherNel)
         )
       }.sequence
     } yield enrichedEvents).value.map(_.toValidated)

@@ -71,8 +71,7 @@ object IgluUtils {
         } yield unstructSDJ.some
       case None =>
         EitherT.rightT[F, FailureDetails.SchemaViolation](none[SelfDescribingData[Json]])
-    }).value
-      .map(_.toValidated)
+    }).toValidated
 
   /** Extract list of custom contexts from event and validate each against its schema
    *  @param event Snowplow enriched event from which to extract custom contexts (in String)
@@ -108,8 +107,7 @@ object IgluUtils {
         EitherT.rightT[F, NonEmptyList[FailureDetails.SchemaViolation]](
           List.empty[SelfDescribingData[Json]]
         )
-    }).value
-      .map(_.toValidated)
+    }).toValidated
 
   /** Validate each context added by the enrichments against its schema
    *  @param client Iglu client used for SDJ validation
@@ -132,8 +130,7 @@ object IgluUtils {
             )
         }
       )
-      .value
-      .map(_.toValidated)
+      .toValidated
 
   // Used to extract .data for input custom contexts and input unstructured event
   private def extractInputData[F[_]: Monad: RegistryLookup: Clock](

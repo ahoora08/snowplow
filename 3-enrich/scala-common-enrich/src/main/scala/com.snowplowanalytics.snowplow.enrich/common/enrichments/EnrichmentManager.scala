@@ -94,7 +94,15 @@ object EnrichmentManager {
         first <- Monad[F].pure(firstPassTransform)
         second <- Monad[F].pure(secondPassTransform)
       } yield (first, second)
-        .mapN { (_, _) =>
+(firstPassTransform |+| secondPassTransform).leftMap { enrichmentFailures =>
+          buildEnrichmentFailuresBadRow(
+            enrichmentFailures,
+            EnrichedEvent.toPartiallyEnrichedEvent(event),
+            RawEvent.toRawEvent(raw),
+            processor
+          )
+        }
+        .toEither
           ()
         }
         .leftMap { enrichmentFailures =>
@@ -139,8 +147,7 @@ object EnrichmentManager {
       ////////////////////////////////////////////////////////
 
       enrichmentsContexts <- EitherT {
-        val inputContexts = inputSDJs._1
-        val unstructEvent = inputSDJs._2
+        val (inputContexts, unstructEvent) = inputSDJs
 
         // 3a. Enrichments which don't need the payload
 
@@ -241,7 +248,7 @@ object EnrichmentManager {
 
         // Enrichments that don't run in a Monad
         val noMonadEnrichments: ValidatedNel[FailureDetails.EnrichmentFailure, Unit] =
-          (
+          List(
             collectorTstamp.toValidatedNel,
             useragent.toValidatedNel,
             collectorVersionSet.toValidatedNel,
@@ -255,7 +262,7 @@ object EnrichmentManager {
             crossDomain.toValidatedNel,
             extractSchema.toValidatedNel,
             jsScript.toValidatedNel
-          ).mapN((_, _, _, _, _, _, _, _, _, _, _, _, _) => ())
+          ).sequence_
 
         // Contexts of built-in enrichments
         val builtInContexts: F[List[SelfDescribingData[Json]]] =
@@ -329,16 +336,15 @@ object EnrichmentManager {
       // 5. Check that all the contexts created by the enrichments are valid
       //////////////////////////////////////////////////////////////////////
 
-      _ <- EitherT(for {
-        valid <- IgluUtils.validateEnrichmentsContexts[F](client, enrichmentsContexts)
-      } yield valid.leftMap { enrichmentFailures =>
-        buildEnrichmentFailuresBadRow(
-          enrichmentFailures,
-          EnrichedEvent.toPartiallyEnrichedEvent(event),
-          RawEvent.toRawEvent(raw),
-          processor
-        )
-      }.toEither)
+      _ <- EitherT(IgluUtils.validateEnrichmentsContexts[F](client, enrichmentsContexts).map(_.toEither))
+        .leftMap { enrichmentFailures =>
+          buildEnrichmentFailuresBadRow(
+            enrichmentFailures,
+            EnrichedEvent.toPartiallyEnrichedEvent(event),
+            RawEvent.toRawEvent(raw),
+            processor
+          )
+        }
 
       ////////////////////////////////////////////////////////////////////////////////////////////////
       // 6. Add all the enrichments contexts to the enriched event and run the destructive enrichments
