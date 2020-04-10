@@ -18,8 +18,8 @@ package sources
 
 import com.snowplowanalytics.snowplow.enrich.stream.model.{
   AWSCredentials,
+  DualCloudCredentialsPair,
   GCPCredentials,
-  MultiCloudCredentials,
   NoCredentials
 }
 import org.specs2.mutable.Specification
@@ -46,20 +46,20 @@ class UtilsSpec extends Specification {
   }
 
   "extractCredentials" should {
-    "extract optional AWS and GCP credential from configuration" in {
-      utils.extractCredentials(SpecHelpers.kafkaConfig) mustEqual MultiCloudCredentials(
+    "extract optional AWS and GCP credential from cloud agnostic configuration" in {
+      utils.extractCredentials(SpecHelpers.kafkaConfig) mustEqual DualCloudCredentialsPair(
         AWSCredentials("access1", "secret1"),
         NoCredentials
       )
-      utils.extractCredentials(SpecHelpers.nsqConfigWithoutCreds) mustEqual MultiCloudCredentials(
+      utils.extractCredentials(SpecHelpers.nsqConfigWithoutCreds) mustEqual DualCloudCredentialsPair(
         NoCredentials,
         NoCredentials
       )
-      utils.extractCredentials(SpecHelpers.nsqConfigWithCreds) mustEqual MultiCloudCredentials(
+      utils.extractCredentials(SpecHelpers.nsqConfigWithCreds) mustEqual DualCloudCredentialsPair(
         AWSCredentials("access2", "secret2"),
         GCPCredentials("credsPath1")
       )
-      utils.extractCredentials(SpecHelpers.stdinConfig) mustEqual MultiCloudCredentials(
+      utils.extractCredentials(SpecHelpers.stdinConfig) mustEqual DualCloudCredentialsPair(
         NoCredentials,
         GCPCredentials("credsPath2")
       )

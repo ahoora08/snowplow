@@ -42,11 +42,11 @@ import com.google.cloud.storage.{BlobId, StorageOptions}
 import com.snowplowanalytics.snowplow.enrich.common.enrichments.EnrichmentRegistry
 import com.snowplowanalytics.snowplow.enrich.stream.model.{
   AWSCredentials,
+  CloudAgnosticPlatformConfig,
   Credentials,
+  DualCloudCredentialsPair,
   GCPCredentials,
-  MultiCloudCredentials,
-  NoCredentials,
-  SourceSinkAgnosticConfig
+  NoCredentials
 }
 import com.snowplowanalytics.snowplow.scalatracker.UUIDProvider
 
@@ -173,8 +173,13 @@ object utils {
     case path => path
   }
 
-  def extractCredentials(config: SourceSinkAgnosticConfig): MultiCloudCredentials =
-    MultiCloudCredentials(
+  /**
+   * Extracts a DualCloudCredentialsPair from given cloud agnostic platform config
+   * @param config A configuration belonging to a cloud agnostic platform
+   * @return A DualCloudCredentialsPair instance
+   */
+  def extractCredentials(config: CloudAgnosticPlatformConfig): DualCloudCredentialsPair =
+    DualCloudCredentialsPair(
       config.aws.fold[Credentials](NoCredentials)(identity),
       config.gcp.fold[Credentials](NoCredentials)(identity)
     )

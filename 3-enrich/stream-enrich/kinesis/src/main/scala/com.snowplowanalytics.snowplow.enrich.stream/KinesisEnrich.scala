@@ -41,7 +41,7 @@ import com.snowplowanalytics.snowplow.scalatracker.Tracker
 import io.circe.Json
 import io.circe.syntax._
 import config._
-import model.{Credentials, Kinesis, MultiCloudCredentials, NoCredentials, StreamsConfig}
+import model.{Credentials, DualCloudCredentialsPair, Kinesis, NoCredentials, StreamsConfig}
 import sources.KinesisSource
 import utils.getAWSCredentialsProvider
 
@@ -57,7 +57,7 @@ object KinesisEnrich extends Enrich {
       (enrichConfig, resolverArg, enrichmentsArg, forceDownload) = config
       creds <- enrichConfig.streams.sourceSink match {
         case c: Kinesis =>
-          MultiCloudCredentials(c.aws, c.gcp.fold[Credentials](NoCredentials)(identity)).asRight
+          DualCloudCredentialsPair(c.aws, c.gcp.fold[Credentials](NoCredentials)(identity)).asRight
         case _ => "Configured source/sink is not Kinesis".asLeft
       }
       client <- parseClient(resolverArg)(creds.aws)

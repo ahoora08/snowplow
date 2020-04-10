@@ -63,8 +63,10 @@ trait Enrich {
     val trackerSource: Either[String, (Option[Tracker[Id]], Source)] = for {
       config <- parseConfig(args)
       (enrichConfig, resolverArg, enrichmentsArg, forceDownload) = config
-      sourceSink = enrichConfig.streams.sourceSink.asInstanceOf[SourceSinkAgnosticConfig]
-      credentials <- extractCredentials(sourceSink).asRight
+      credentials <- enrichConfig.streams.sourceSink match {
+        case c: CloudAgnosticPlatformConfig => extractCredentials(c).asRight
+        case _ => "Configured source/sink is not a cloud agnostic target".asLeft
+      }
       client <- parseClient(resolverArg)
       enrichmentsConf <- parseEnrichmentRegistry(enrichmentsArg, client)(implicitly)
       _ <- cacheFiles(enrichmentsConf, forceDownload, credentials.aws, credentials.gcp)
@@ -110,7 +112,7 @@ trait Enrich {
   ): Either[String, sources.Source]
 
   implicit def hint[T]: ProductHint[T] = ProductHint[T](ConfigFieldMapping(CamelCase, CamelCase))
-  implicit val _ = new FieldCoproductHint[SourceSinkConfig]("enabled")
+  implicit val _ = new FieldCoproductHint[TargetPlatformConfig]("enabled")
 
   /**
    * Parses the configuration from cli arguments

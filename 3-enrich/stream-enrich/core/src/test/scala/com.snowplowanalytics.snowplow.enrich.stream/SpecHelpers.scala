@@ -26,10 +26,10 @@ import com.snowplowanalytics.snowplow.enrich.common.outputs.EnrichedEvent
 import com.snowplowanalytics.snowplow.enrich.common.utils.JsonUtils
 import com.snowplowanalytics.snowplow.enrich.stream.model.{
   AWSCredentials,
+  CloudAgnosticPlatformConfig,
   GCPCredentials,
   Kafka,
   Nsq,
-  SourceSinkAgnosticConfig,
   Stdin
 }
 import org.specs2.matcher.{Expectable, Matcher}
@@ -304,10 +304,10 @@ object SpecHelpers {
     Map(("remoteVendor", "v42") -> new RemoteAdapter("http://localhost:9090/", None, None))
   )
 
-  val kafkaConfig: SourceSinkAgnosticConfig =
+  val kafkaConfig: CloudAgnosticPlatformConfig =
     Kafka(Some(AWSCredentials("access1", "secret1")), None, "", 0, None, None)
-  val nsqConfigWithoutCreds: SourceSinkAgnosticConfig = Nsq(None, None, "", "", 0, "", 0)
-  val nsqConfigWithCreds: SourceSinkAgnosticConfig = Nsq(
+  val nsqConfigWithoutCreds: CloudAgnosticPlatformConfig = Nsq(None, None, "", "", 0, "", 0)
+  val nsqConfigWithCreds: CloudAgnosticPlatformConfig = Nsq(
     Some(AWSCredentials("access2", "secret2")),
     Some(GCPCredentials("credsPath1")),
     "",
@@ -316,5 +316,5 @@ object SpecHelpers {
     "",
     0
   )
-  val stdinConfig: SourceSinkAgnosticConfig = Stdin(None, Some(GCPCredentials("credsPath2")))
+  val stdinConfig: CloudAgnosticPlatformConfig = Stdin(None, Some(GCPCredentials("credsPath2")))
 }
